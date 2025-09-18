@@ -1,0 +1,24 @@
+tr#calendar-table-head th {
+    padding: 8px;
+    padding-top: 11px;
+    padding-bottom: 11px;
+    background-color: #04AA6D;
+    color: white;
+}
+
+td.calendar-week-cell {
+    text-align: center;
+    padding: 8px;
+}
+
+td.calendar-week-cell.inactive {
+    color: #d5e1df;
+}
+
+td.calendar-week-cell:hover {
+    background-color: #d5e1df;
+}
+
+td.calendar-week-cell.marked {
+    background-color: #04AA6D;
+}
