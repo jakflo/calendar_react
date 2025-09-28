@@ -9,10 +9,12 @@ tr#calendar-table-head th {
 td.calendar-week-cell {
     text-align: center;
     padding: 8px;
+    cursor: pointer;
 }
 
 td.calendar-week-cell.inactive {
     color: #d5e1df;
+    cursor: not-allowed;
 }
 
 td.calendar-week-cell:hover {
