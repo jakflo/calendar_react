@@ -5,7 +5,7 @@ import CellIsMarked from './CellIsMarked';
 import getMonthName from './getMonthName';
 import dayNames from './dayNames';
 import './calendar.css';
-import './niceButton.css';
+import NiceButton from './NiceButton';
 import type { ChangeFocusEventType, MarkedCellChangedEventType } from './EventTypes';
 
 interface CalendarProps {
@@ -118,8 +118,8 @@ function Calendar(props: CalendarProps) {
             </tbody>
         </table>
         <div id="calendar-buttons">
-            <button type="button" className="nice_button" onClick={prevMonth}><span className="nice_button_top"> &lt; </span></button>
-            <button type="button" className="nice_button" onClick={nextMonth}><span className="nice_button_top"> &gt; </span></button>
+            <NiceButton type="button" onClick={prevMonth} label=" &lt; " />
+            <NiceButton type="button" onClick={nextMonth} label=" &gt; " />
         </div>
         </>
     );
