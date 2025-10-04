@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
+import type { FormEvent } from 'react';
 import WeekRow from './WeekRow';
 import IsWeekCellActive from './IsWeekCellActive';
 import CellIsMarked from './CellIsMarked';
-import getMonthName from './getMonthName';
+import { getMonthName, monthNames } from './getMonthName';
 import dayNames from './dayNames';
 import './calendar.css';
 import NiceButton from './NiceButton';
+import Selector from './Selector';
+import InputRefreshed from './InputRefreshed';
 import type { ChangeFocusEventType, MarkedCellChangedEventType } from './EventTypes';
 
 interface CalendarProps {
@@ -79,6 +82,17 @@ function Calendar(props: CalendarProps) {
         document.getElementById('calendar-table')?.dispatchEvent(changeFocusEvent);
     };
 
+    const quickjumpFormSubmitted = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        const data = new FormData(event.currentTarget);
+        const newMonth = parseInt(data.get('month') as string);
+        const newYear = parseInt(data.get('year') as string);
+
+        setMonth(newMonth);
+        setYear(newYear);
+        fireMonthChangedEvent(newMonth, newYear);
+    };
+
     let daysHead = [];
     let k;
     for (k in dayNames) {
@@ -118,8 +132,13 @@ function Calendar(props: CalendarProps) {
             </tbody>
         </table>
         <div id="calendar-buttons">
-            <NiceButton type="button" onClick={prevMonth} label=" &lt; " />
-            <NiceButton type="button" onClick={nextMonth} label=" &gt; " />
+            <form id="calendar-quickjump-form" onSubmit={quickjumpFormSubmitted}>
+                <NiceButton type="button" onClick={prevMonth} label=" &lt; " />
+                <Selector data={monthNames} name="month" defaultValue={month} />
+                <InputRefreshed type="number" name="year" defaultValue={year} step="1" size={8} required />
+                <NiceButton className="green-button" type="submit" label="Skoč" />
+                <NiceButton type="button" onClick={nextMonth} label=" &gt; " />
+            </form>
         </div>
         </>
     );

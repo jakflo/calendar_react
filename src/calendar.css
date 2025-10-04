@@ -24,3 +24,13 @@ td.calendar-week-cell:hover {
 td.calendar-week-cell.marked {
     background-color: #04AA6D;
 }
+
+button.nice_button.green-button .nice_button_top {
+    background: #28d3aa;
+}
+
+#calendar-quickjump-form select, #calendar-quickjump-form input {
+    font-size: 16px;
+    padding-top: 0.4em;
+    padding-bottom: 0.4em;
+}

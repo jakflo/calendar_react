@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import getMonthName from './getMonthName';
+import { getMonthName } from './getMonthName';
 import type { ChangeFocusEventType, MarkedCellChangedEventType } from './EventTypes';
 
 interface MonthYearProps {
