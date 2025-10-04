@@ -38,7 +38,9 @@ function Calendar(props: CalendarProps) {
     try {
         checkYear(year);
         monthName = getMonthName(month);
-    } catch(err) {
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    catch(err) {
         return (
             <>
             Špatný formát měsíce/roku
@@ -93,16 +95,16 @@ function Calendar(props: CalendarProps) {
         fireMonthChangedEvent(newMonth, newYear);
     };
 
-    let daysHead = [];
+    const daysHead = [];
     let k;
     for (k in dayNames) {
-        let headCell = (<th key={`dayhead_${k}`}>{dayNames[k]}</th>);
+        const headCell = (<th key={`dayhead_${k}`}>{dayNames[k]}</th>);
         daysHead.push(headCell);
     }
 
     const startDate = getStartDate(month, year);
     const isWeekCellActive = new IsWeekCellActive();
-    let weekRows = [];
+    const weekRows = [];
     for (k = 0; k <= 5; k++) {
         const dateUnix = startDate.getTime() + 86400 * k * 7 * 1000;
         const date = new Date(dateUnix);
@@ -146,7 +148,7 @@ function Calendar(props: CalendarProps) {
 
 // pokud 1. den mesice nevyjde na pondelek, tak to vrati datum o par dni driv, tak aby to vyslo na pondelek
 function getStartDate(month: number, year: number): Date {
-    let startDate = new Date(`${year}-${month}-01 00:00:00`);
+    const startDate = new Date(`${year}-${month}-01 00:00:00`);
     if (year < 100) {
         startDate.setFullYear(year);
     }

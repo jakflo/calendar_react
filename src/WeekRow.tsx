@@ -10,7 +10,7 @@ interface WeekRowProps {
 
 function WeekRow(props: WeekRowProps) {
     let k;
-    let cells = [];
+    const cells = [];
     const startDateUnix = props.startDate.getTime();
 
     for (k = 0; k <= 6; k++) {

@@ -1,6 +1,6 @@
 // k retezci className elementu pridame nebo odeberem tridu
 function addClass(className: string, classToAdd: string): string {
-    let classesArray = className.split(' ');
+    const classesArray = className.split(' ');
     if (!classesArray.includes(classToAdd)) {
         classesArray.push(classToAdd);
     }
@@ -9,7 +9,7 @@ function addClass(className: string, classToAdd: string): string {
 }
 
 function removeClass(className: string, classToRemove: string): string {
-    let classesArray = className.split(' ');
+    const classesArray = className.split(' ');
     const classesKey = classesArray.indexOf(classToRemove);
     if (classesKey !== -1) {
         classesArray.splice(classesKey, 1);
