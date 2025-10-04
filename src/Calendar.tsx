@@ -147,6 +147,10 @@ function Calendar(props: CalendarProps) {
 // pokud 1. den mesice nevyjde na pondelek, tak to vrati datum o par dni driv, tak aby to vyslo na pondelek
 function getStartDate(month: number, year: number): Date {
     let startDate = new Date(`${year}-${month}-01 00:00:00`);
+    if (year < 100) {
+        startDate.setFullYear(year);
+    }
+
     const fstDay = startDate.getDay();
     let rewindDay = 0;
 

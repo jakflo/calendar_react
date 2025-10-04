@@ -5,6 +5,6 @@ import { Calendar } from './Calendar.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Calendar month='9' year='2025' />
+    <Calendar month='10' year='2025' />
   </StrictMode>,
 )
