@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { FormEvent } from 'react';
 import WeekRow from './WeekRow';
 import IsWeekCellActive from './IsWeekCellActive';
@@ -19,7 +19,7 @@ interface CalendarProps {
 function Calendar(props: CalendarProps) {
     const [month, setMonth] = useState(parseInt(props.month));
     const [year, setYear] = useState(parseInt(props.year));
-    const [isWeekCellMarked, setIsWeekCellMarked] = useState((new IsWeekCellMarked()));
+    const isWeekCellMarked = useRef((new IsWeekCellMarked()));
 
     useEffect(() => {
         const element = document.getElementById('calendar-table');
@@ -28,9 +28,9 @@ function Calendar(props: CalendarProps) {
             setYear(event.detail!.year);
         });
         element?.addEventListener('markedCellChanged', (event: MarkedCellChangedEventType) => {
-            const newIsWeekCellMarked = isWeekCellMarked;
+            const newIsWeekCellMarked = isWeekCellMarked.current;
             newIsWeekCellMarked.setMarkedDate(event.detail!.selectedDate);
-            setIsWeekCellMarked(newIsWeekCellMarked);
+            isWeekCellMarked.current = newIsWeekCellMarked;
         });
     });
 
@@ -114,7 +114,7 @@ function Calendar(props: CalendarProps) {
 
         const weekRow = (<WeekRow
                             isWeekCellActive={isWeekCellActive}
-                            isWeekCellMarked={isWeekCellMarked}
+                            isWeekCellMarked={isWeekCellMarked.current}
                             key={`weekrow_${k}`}
                             startDate={date}
                         />);
