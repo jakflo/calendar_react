@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import type { FormEvent } from 'react';
+import type { FormEvent, ButtonHTMLAttributes } from 'react';
 import WeekRow from './WeekRow';
 import IsWeekCellActive from './IsWeekCellActive';
 import CellIsMarked from './CellIsMarked';
-import { getMonthName, monthNames } from './getMonthName';
-import dayNames from './dayNames';
+import { checkYear, dayNames, getMonthName, monthNames, printYearWithBc, dateDstFix } from './dateTools';
 import './calendar.css';
 import NiceButton from './NiceButton';
 import Selector from './Selector';
@@ -88,7 +87,12 @@ function Calendar(props: CalendarProps) {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
         const newMonth = parseInt(data.get('month') as string);
-        const newYear = parseInt(data.get('year') as string);
+
+        // dame kladny nebo zaporny rok, dle AD nebo BC
+        let newYear = parseInt(data.get('year') as string);
+        if ((data.get('bc-on') === '1' && newYear > 0) || (data.get('bc-on') === '0' && newYear < 0)) {
+            newYear *= (-1);
+        }
 
         setMonth(newMonth);
         setYear(newYear);
@@ -107,7 +111,7 @@ function Calendar(props: CalendarProps) {
     const weekRows = [];
     for (k = 0; k <= 5; k++) {
         const dateUnix = startDate.getTime() + 86400 * k * 7 * 1000;
-        const date = new Date(dateUnix);
+        const date = dateDstFix((new Date(dateUnix)));
         if (date.getMonth() + 1 === month + 1 || date.getFullYear() > year) {
             break;
         }
@@ -123,7 +127,7 @@ function Calendar(props: CalendarProps) {
 
     return (
         <>
-        <h1>Kalendář pro měsíc {monthName} {year}</h1>
+        <h1>Kalendář pro měsíc {monthName} {printYearWithBc(year)}</h1>
         <CellIsMarked month={month} year={year} />
         <table id="calendar-table">
             <thead>
@@ -137,11 +141,38 @@ function Calendar(props: CalendarProps) {
             <form id="calendar-quickjump-form" onSubmit={quickjumpFormSubmitted}>
                 <NiceButton type="button" onClick={prevMonth} label=" &lt; " />
                 <Selector data={monthNames} name="month" defaultValue={month} />
-                <InputRefreshed type="number" name="year" defaultValue={year} step="1" size={8} required />
+                <AdBcSwitch year={year} />
+                <InputRefreshed type="number" name="year" defaultValue={Math.abs(year)} step="1" min={0} size={8} required />
                 <NiceButton className="green-button" type="submit" label="Skoč" />
                 <NiceButton type="button" onClick={nextMonth} label=" &gt; " />
             </form>
         </div>
+        </>
+    );
+}
+
+// prepimac mezi AD a BC, tj., zda neni letopocet pred Kristem, tudiz zaporny rok
+type AdBcSwitchProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  year: number;
+};
+
+function AdBcSwitch({ year, ...props }: AdBcSwitchProps) {
+    const [bcOn, setBcOn] = useState(year < 0);
+
+    useEffect(() => {
+        document.getElementById('calendar-table')?.addEventListener('changeFocus', (event: ChangeFocusEventType) => {
+            setBcOn(event.detail!.year < 0);
+        });
+    });
+
+    const switchPushed = () => {
+        setBcOn(!bcOn);
+    };
+
+    return (
+        <>
+        <NiceButton type="button" label={bcOn ? 'BC' : 'AD'} onClick={switchPushed} {...props} />
+        <input type="hidden" name="bc-on" value={bcOn ? '1' : '0'} />
         </>
     );
 }
@@ -166,12 +197,6 @@ function getStartDate(month: number, year: number): Date {
 
     const unixDate = startDate.getTime() - 86400 * rewindDay * 1000;
     return new Date(unixDate);
-}
-
-function checkYear(year: number) {
-    if (!Number.isInteger(year) || year < 0) {
-        throw new Error('bad year');
-    }
 }
 
 class IsWeekCellMarked {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getMonthName } from './getMonthName';
+import { getMonthName, printYearWithBc } from './dateTools';
 import type { ChangeFocusEventType, MarkedCellChangedEventType } from './EventTypes';
 
 interface MonthYearProps {
@@ -39,7 +39,7 @@ function CellIsMarked(props: MonthYearProps) {
             jumpBackButton = null;
         }
 
-        const dayText = `${markedCellDateTyped.getDate()}. ${getMonthName(markedCellDateTyped.getMonth() + 1)} ${markedCellDateTyped.getFullYear()}`;
+        const dayText = `${markedCellDateTyped.getDate()}. ${getMonthName(markedCellDateTyped.getMonth() + 1)} ${printYearWithBc(markedCellDateTyped.getFullYear())}`;
         return (
             <div id="marked-cell-text">
             <p>{`Vybrán den ${dayText}`} {jumpBackButton}</p>
