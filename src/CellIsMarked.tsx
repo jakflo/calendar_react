@@ -1,40 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useContext } from 'react';
 import { getMonthName, printYearWithBc } from './dateTools';
-import type { ChangeFocusEventType, MarkedCellChangedEventType } from './EventTypes';
+import { FocusedDateContext, MarkedDateContext } from './Calendar';
 
-interface MonthYearProps {
-    month: number|null;
-    year: number|null;
-}
 
-function CellIsMarked(props: MonthYearProps) {
-    const [markedCellDate, setMarkedCellDate] = useState<Date|null>(null);
-    const [focusedMonth, setFocusedMonth] = useState(props.month);
-    const [focusedYear, setFocusedYear] = useState(props.year);
+function CellIsMarked() {
+    const { monthFocused, yearFocused } = useContext(FocusedDateContext);
+    const { dateMarked } = useContext(MarkedDateContext);
 
-    const markedMonth = markedCellDate !== null ? (markedCellDate as Date).getMonth() + 1 : null;
-    const markedYear = markedCellDate !== null ? (markedCellDate as Date).getFullYear() : null;
-
-    useEffect(() => {
-        document.getElementById('marked-cell-text')?.addEventListener('markedCellChanged', (event) => {
-            setMarkedCellDate((event as MarkedCellChangedEventType).detail!.selectedDate);
-        });
-        document.getElementById('calendar-table')?.addEventListener('changeFocus', (event) => {
-            const eventTyped = event as ChangeFocusEventType;
-            setFocusedMonth(eventTyped.detail!.month);
-            setFocusedYear(eventTyped.detail!.year);
-        });
-    });
-
-    if (markedCellDate === null) {
+    if (dateMarked === null) {
         return (
             <div id="marked-cell-text" />
         );
     } else {
-        const markedCellDateTyped = markedCellDate as Date;
+        const markedCellDateTyped = dateMarked as Date;
+
         let jumpBackButton;
-        if (markedMonth !== focusedMonth || markedYear !== focusedYear) {
-            jumpBackButton = (<JumpBackButton month={markedMonth} year={markedYear} />);
+        if (monthFocused !== dateMarked.getMonth() + 1 || yearFocused !== dateMarked.getFullYear()) {
+            jumpBackButton = (<JumpBackButton />);
         } else {
             jumpBackButton = null;
         }
@@ -48,13 +30,13 @@ function CellIsMarked(props: MonthYearProps) {
     }
 }
 
-function JumpBackButton(props: MonthYearProps) {
+function JumpBackButton() {
+    const { dateMarked } = useContext(MarkedDateContext);
+    const { setMonthFocused, setYearFocused } = useContext(FocusedDateContext);
+
     const jumpBack = () => {
-        const changeFocusEvent = new CustomEvent('changeFocus', {detail: {
-            month: props.month,
-            year: props.year
-        }});
-        document.getElementById('calendar-table')?.dispatchEvent(changeFocusEvent);
+        setMonthFocused(dateMarked!.getMonth() + 1);
+        setYearFocused(dateMarked!.getFullYear());
     };
 
     return (

@@ -1,72 +1,60 @@
-import { useState, useEffect } from 'react';
-import { addClass, removeClass } from './AddOrRemoveClass';
-import type IsWeekCellActive from './IsWeekCellActive';
+import { useContext } from 'react';
+import { addClass } from './AddOrRemoveClass';
+import { IsWeekCellActiveContext, MarkedDateContext } from './Calendar';
 
 interface WeekCellProps {
     cellId:number,
-    isWeekCellMarked: boolean,
-    isWeekCellActive: IsWeekCellActive,
     date: Date
 }
 
 function WeekCell(props: WeekCellProps) {
-    let initClassName = 'calendar-week-cell';
+    let className = 'calendar-week-cell';
     const cellId = `cell_${props.cellId}`;
-    const [cellIsActive, setCellIsActive] = useState<boolean|null>(null);
-    const [isCellMarked, setIsCellMarked] = useState(props.isWeekCellMarked);
+    const isWeekCellActive = useContext(IsWeekCellActiveContext);
+    const { dateMarked, setDateMarked } = useContext(MarkedDateContext);
 
-    if (cellIsActive === null && !props.isWeekCellActive.isCellActive(props.date)) {
-        initClassName = addClass(initClassName, 'inactive');
-        setCellIsActive(false);
-    } else if (cellIsActive === null) {
-        setCellIsActive(true);
+    const isWeekCellMarked = new IsWeekCellMarked();
+    isWeekCellMarked.setMarkedDate(dateMarked);
+
+    let cellIsActive;
+    if (!isWeekCellActive.isCellActive(props.date)) {
+        className = addClass(className, 'inactive');
+        cellIsActive = false;
+    } else {
+        cellIsActive = true;
     }
 
-    if (isCellMarked) {
-        initClassName = addClass(initClassName, 'marked');
+    if (isWeekCellMarked.isDateMarked(props.date)) {
+        className = addClass(className, 'marked');
     }
-
-    const [className, setClassName] = useState(initClassName);
-
-    useEffect(() => {
-        document.getElementById(cellId)?.addEventListener('unmarkCells', () => {
-            unmarkCell();
-        })
-    });
-
-    const markCellUnmarkOthers = () => {
-        if (!cellIsActive) {
-            return;
-        }
-
-        const unmarkCellsEvent = new CustomEvent('unmarkCells');
-        const cells = document.getElementsByClassName('calendar-week-cell');
-        let k;
-        for (k = 0; k < cells.length; k++) {
-            cells[k].dispatchEvent(unmarkCellsEvent);
-        }
-
-        markCell();
-        const markedCellChangedEvent = new CustomEvent('markedCellChanged', { detail: {selectedDate: props.date} });
-        document.getElementById('marked-cell-text')?.dispatchEvent(markedCellChangedEvent);
-        document.getElementById('calendar-table')?.dispatchEvent(markedCellChangedEvent);
-    };
 
     const markCell = () => {
-        setClassName(addClass(className, 'marked'));
-        setIsCellMarked(true);
-    };
-
-    const unmarkCell = () => {
-        setClassName(removeClass(className, 'marked'));
-        setIsCellMarked(false);
+        if (cellIsActive) {
+            setDateMarked(props.date);
+        }
     };
 
     return (
         <>
-        <td className={className} id={cellId} onClick={markCellUnmarkOthers}>{props.date.getDate()}</td>
+        <td className={className} id={cellId} onClick={markCell}>{props.date.getDate()}</td>
         </>
     );
+}
+
+class IsWeekCellMarked {
+    private markedDate: Date|null = null;
+
+    isDateMarked(date: Date): boolean {
+        if (this.markedDate === null) {
+            return false;
+        }
+
+        return this.markedDate.getTime() === date.getTime();
+    }
+
+    setMarkedDate(markedDate: Date|null) {
+        this.markedDate = markedDate;
+    }
 }
 
 export default WeekCell;

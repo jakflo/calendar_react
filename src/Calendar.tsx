@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import type { FormEvent, ButtonHTMLAttributes } from 'react';
+import { useState, createContext, useContext } from 'react';
+import type { FormEvent, ButtonHTMLAttributes, ReactNode, Dispatch, SetStateAction } from 'react';
 import WeekRow from './WeekRow';
 import IsWeekCellActive from './IsWeekCellActive';
 import CellIsMarked from './CellIsMarked';
@@ -8,35 +8,47 @@ import './calendar.css';
 import NiceButton from './NiceButton';
 import Selector from './Selector';
 import InputRefreshed from './InputRefreshed';
-import type { ChangeFocusEventType, MarkedCellChangedEventType } from './EventTypes';
 
 interface CalendarProps {
     month: string;
     year: string;
 }
 
-function Calendar(props: CalendarProps) {
-    const [month, setMonth] = useState(parseInt(props.month));
-    const [year, setYear] = useState(parseInt(props.year));
-    const isWeekCellMarked = useRef((new IsWeekCellMarked()));
+type focusedDateContextType = {
+    monthFocused: number;
+    setMonthFocused: Dispatch<SetStateAction<number>>;
+    yearFocused: number;
+    setYearFocused: Dispatch<SetStateAction<number>>;
+};
 
-    useEffect(() => {
-        const element = document.getElementById('calendar-table');
-        element?.addEventListener('changeFocus', (event: ChangeFocusEventType) => {
-            setMonth(event.detail!.month);
-            setYear(event.detail!.year);
-        });
-        element?.addEventListener('markedCellChanged', (event: MarkedCellChangedEventType) => {
-            const newIsWeekCellMarked = isWeekCellMarked.current;
-            newIsWeekCellMarked.setMarkedDate(event.detail!.selectedDate);
-            isWeekCellMarked.current = newIsWeekCellMarked;
-        });
-    });
+const FocusedDateContext = createContext<focusedDateContextType>({
+    monthFocused: 0,
+    setMonthFocused: () => {},
+    yearFocused: 0,
+    setYearFocused: () => {}
+});
+
+type markedDateContextType = {
+    dateMarked: Date | null;
+    setDateMarked: Dispatch<SetStateAction<Date | null>>;
+};
+
+const MarkedDateContext = createContext<markedDateContextType>({
+    dateMarked: null,
+    setDateMarked: () => {}
+});
+
+const IsWeekCellActiveContext = createContext((new IsWeekCellActive()));
+
+function Calendar(props: CalendarProps) {
+    const [monthFocused, setMonthFocused] = useState(parseInt(props.month));
+    const [yearFocused, setYearFocused] = useState(parseInt(props.year));
+    const [dateMarked, setDateMarked] = useState<Date | null>(null);
 
     let monthName;
     try {
-        checkYear(year);
-        monthName = getMonthName(month);
+        checkYear(yearFocused);
+        monthName = getMonthName(monthFocused);
     }
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     catch(err) {
@@ -48,39 +60,27 @@ function Calendar(props: CalendarProps) {
     }
 
     const prevMonth = () => {
-        let newMonth = month - 1;
+        let newMonth = monthFocused - 1;
         if (newMonth > 0) {
-            setMonth(newMonth);
-            fireMonthChangedEvent(newMonth, year);
+            setMonthFocused(newMonth);
         } else {
             newMonth = 12;
-            const newYear = year - 1;
-            setMonth(newMonth);
-            setYear(newYear);
-            fireMonthChangedEvent(newMonth, newYear);
+            const newYear = yearFocused - 1;
+            setMonthFocused(newMonth);
+            setYearFocused(newYear);
         }
     };
 
     const nextMonth = () => {
-        let newMonth = month + 1;
+        let newMonth = monthFocused + 1;
         if (newMonth <= 12) {
-            setMonth(newMonth);
-            fireMonthChangedEvent(newMonth, year);
+            setMonthFocused(newMonth);
         } else {
             newMonth = 1;
-            const newYear = year + 1;
-            setMonth(newMonth);
-            setYear(newYear);
-            fireMonthChangedEvent(newMonth, newYear);
+            const newYear = yearFocused + 1;
+            setMonthFocused(newMonth);
+            setYearFocused(newYear);
         }
-    };
-
-    const fireMonthChangedEvent = (month: number, year: number) => {
-        const changeFocusEvent = new CustomEvent('changeFocus', { detail: {
-            month: month,
-            year: year
-        } });
-        document.getElementById('calendar-table')?.dispatchEvent(changeFocusEvent);
     };
 
     const quickjumpFormSubmitted = (event: FormEvent<HTMLFormElement>) => {
@@ -94,9 +94,8 @@ function Calendar(props: CalendarProps) {
             newYear *= (-1);
         }
 
-        setMonth(newMonth);
-        setYear(newYear);
-        fireMonthChangedEvent(newMonth, newYear);
+        setMonthFocused(newMonth);
+        setYearFocused(newYear);
     };
 
     const daysHead = [];
@@ -106,64 +105,70 @@ function Calendar(props: CalendarProps) {
         daysHead.push(headCell);
     }
 
-    const startDate = getStartDate(month, year);
-    const isWeekCellActive = new IsWeekCellActive();
+    const startDate = getStartDate(monthFocused, yearFocused);
     const weekRows = [];
     for (k = 0; k <= 5; k++) {
         const dateUnix = startDate.getTime() + 86400 * k * 7 * 1000;
         const date = dateDstFix((new Date(dateUnix)));
-        if (date.getMonth() + 1 === month + 1 || date.getFullYear() > year) {
+        if (date.getMonth() + 1 === monthFocused + 1 || date.getFullYear() > yearFocused) {
             break;
         }
 
         const weekRow = (<WeekRow
-                            isWeekCellActive={isWeekCellActive}
-                            isWeekCellMarked={isWeekCellMarked.current}
                             key={`weekrow_${k}`}
                             startDate={date}
                         />);
         weekRows.push(weekRow);
     }
 
+    const CalendarProviders = ({ children }: { children: ReactNode }) => {
+        return (
+        <>
+        <FocusedDateContext.Provider value={{ monthFocused, setMonthFocused, yearFocused, setYearFocused }}>
+            <MarkedDateContext.Provider value={{ dateMarked, setDateMarked }}>
+                { children }
+            </MarkedDateContext.Provider>
+        </FocusedDateContext.Provider>
+        </>
+        );
+    }
+
     return (
         <>
-        <h1>Kalendář pro měsíc {monthName} {printYearWithBc(year)}</h1>
-        <CellIsMarked month={month} year={year} />
-        <table id="calendar-table">
-            <thead>
-                <tr id="calendar-table-head">{daysHead}</tr>
-            </thead>
-            <tbody>
-                {weekRows}
-            </tbody>
-        </table>
-        <div id="calendar-buttons">
-            <form id="calendar-quickjump-form" onSubmit={quickjumpFormSubmitted}>
-                <NiceButton type="button" onClick={prevMonth} label=" &lt; " />
-                <Selector data={monthNames} name="month" defaultValue={month} />
-                <AdBcSwitch year={year} />
-                <InputRefreshed type="number" name="year" defaultValue={Math.abs(year)} step="1" min={0} size={8} required />
-                <NiceButton className="green-button" type="submit" label="Skoč" />
-                <NiceButton type="button" onClick={nextMonth} label=" &gt; " />
-            </form>
-        </div>
+        <CalendarProviders>
+            <h1>Kalendář pro měsíc {monthName} {printYearWithBc(yearFocused)}</h1>
+            <CellIsMarked />
+            <table id="calendar-table">
+                <thead>
+                    <tr id="calendar-table-head">{daysHead}</tr>
+                </thead>
+                <tbody>
+                    <IsWeekCellActiveContext.Provider value={ (new IsWeekCellActive()) }>
+                        {weekRows}
+                    </IsWeekCellActiveContext.Provider>
+                </tbody>
+            </table>
+            <div id="calendar-buttons">
+                <form id="calendar-quickjump-form" onSubmit={quickjumpFormSubmitted}>
+                    <NiceButton type="button" onClick={prevMonth} label=" &lt; " />
+                    <Selector data={monthNames} name="month" defaultValue={monthFocused} />
+                    <AdBcSwitch />
+                    <InputRefreshed type="number" name="year" defaultValue={Math.abs(yearFocused)} step="1" min={0} size={8} required />
+                    <NiceButton className="green-button" type="submit" label="Skoč" />
+                    <NiceButton type="button" onClick={nextMonth} label=" &gt; " />
+                </form>
+            </div>
+        </CalendarProviders>
         </>
     );
 }
 
 // prepimac mezi AD a BC, tj., zda neni letopocet pred Kristem, tudiz zaporny rok
-type AdBcSwitchProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  year: number;
-};
+type AdBcSwitchProps = ButtonHTMLAttributes<HTMLButtonElement>;
 
-function AdBcSwitch({ year, ...props }: AdBcSwitchProps) {
-    const [bcOn, setBcOn] = useState(year < 0);
-
-    useEffect(() => {
-        document.getElementById('calendar-table')?.addEventListener('changeFocus', (event: ChangeFocusEventType) => {
-            setBcOn(event.detail!.year < 0);
-        });
-    });
+function AdBcSwitch({ ...props }: AdBcSwitchProps) {
+    const { yearFocused } = useContext(FocusedDateContext);
+    const [bcOn, setBcOn] = useState(yearFocused < 0);
 
     const switchPushed = () => {
         setBcOn(!bcOn);
@@ -199,21 +204,4 @@ function getStartDate(month: number, year: number): Date {
     return new Date(unixDate);
 }
 
-class IsWeekCellMarked {
-    private markedDate: Date|null = null;
-
-    isDateMarked(date: Date): boolean {
-        if (this.markedDate === null) {
-            return false;
-        }
-
-        return this.markedDate.getTime() === date.getTime();
-    }
-
-    setMarkedDate(markedDate: Date|null) {
-        this.markedDate = markedDate;
-    }
-
-}
-
-export { Calendar, IsWeekCellMarked };
+export { Calendar, FocusedDateContext, MarkedDateContext, IsWeekCellActiveContext };
